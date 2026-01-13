@@ -150,17 +150,18 @@ final class BrightnessManager: ObservableObject {
 			var current = rawBrightness
 
 			while !Task.isCancelled {
-				let next = max(0, min(1, current + direction * step))
+				let stepDelta = direction * step
+				let next = max(0, min(1, current + stepDelta))
 				if next == current { return }
-				let ok = await client.setScreenBrightness(next)
+				let ok = await client.adjustScreenBrightness(by: stepDelta)
 				if ok {
+					current = next
 					publish(brightness: next, touchDate: true)
 					BoringViewCoordinator.shared.toggleSneakPeek(
 						status: true,
 						type: .brightness,
 						value: CGFloat(next)
 					)
-					current = next
 				} else {
 					refresh()
 					return
