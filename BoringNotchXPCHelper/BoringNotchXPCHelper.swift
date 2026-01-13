@@ -145,24 +145,15 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
             return
         }
         if let io = ioServiceFor(displayID: CGMainDisplayID()) {
-            let ok = IODisplaySetFloatParameter(io, 0, kIODisplayBrightnessKey as CFString, value) == kIOReturnSuccess
+            var ioCurrent: Float = 0
+            if IODisplayGetFloatParameter(io, 0, kIODisplayBrightnessKey as CFString, &ioCurrent) == kIOReturnSuccess {
+                let target = max(0, min(1, ioCurrent + value))
+                let ok = IODisplaySetFloatParameter(io, 0, kIODisplayBrightnessKey as CFString, target) == kIOReturnSuccess
+                IOObjectRelease(io)
+                reply(ok)
+                return
+            }
             IOObjectRelease(io)
-            reply(ok)
-            return
-        }
-        reply(false)
-    }
-
-    @objc func adjustScreenBrightness(by value: Float, with reply: @escaping (Bool) -> Void) {
-        if displayServicesSetBrightnessSmooth(displayID: CGMainDisplayID(), value: value) {
-            reply(true)
-            return
-        }
-        if let io = ioServiceFor(displayID: CGMainDisplayID()) {
-            let ok = IODisplaySetFloatParameter(io, 0, kIODisplayBrightnessKey as CFString, value) == kIOReturnSuccess
-            IOObjectRelease(io)
-            reply(ok)
-            return
         }
         reply(false)
     }
@@ -185,13 +176,6 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
         return fn(displayID, value) == 0
     }
     
-    private func displayServicesSetBrightnessSmooth(displayID: CGDirectDisplayID, value: Float) -> Bool {
-        guard let sym = dlsym(DisplayServicesHandle.handle, "DisplayServicesSetBrightnessSmooth") else { return false }
-        typealias Fn = @convention(c) (CGDirectDisplayID, Float) -> Int32
-        let fn = unsafeBitCast(sym, to: Fn.self)
-        return fn(displayID, value) == 0
-    }
-
     private func displayServicesSetBrightnessSmooth(displayID: CGDirectDisplayID, value: Float) -> Bool {
         guard let sym = dlsym(DisplayServicesHandle.handle, "DisplayServicesSetBrightnessSmooth") else { return false }
         typealias Fn = @convention(c) (CGDirectDisplayID, Float) -> Int32
