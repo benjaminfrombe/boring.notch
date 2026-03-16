@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Strava Coach</title>
+  <style>
+    :root {
+      --orange: #FC4C02;
+      --orange-dark: #e04400;
+      --bg: #0f1117;
+      --card: #1a1d27;
+      --card2: #22263a;
+      --border: #2e3250;
+      --text: #e8eaf6;
+      --muted: #8892b0;
+      --green: #22c55e;
+      --blue: #3b82f6;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --purple: #a855f7;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .logo svg { color: var(--orange); }
+
+    .athlete-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .athlete-badge img {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--orange);
+    }
+
+    .athlete-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .btn-logout {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 0.35rem 0.8rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      margin-left: 0.8rem;
+      transition: all 0.2s;
+    }
+
+    .btn-logout:hover {
+      border-color: var(--orange);
+      color: var(--orange);
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    /* Login screen */
+    .login-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+      text-align: center;
+    }
+
+    .login-hero {
+      margin-bottom: 2.5rem;
+    }
+
+    .login-hero h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 0.75rem;
+      background: linear-gradient(135deg, var(--orange), #ff8c42);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .login-hero p {
+      color: var(--muted);
+      font-size: 1.1rem;
+      max-width: 420px;
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+      width: 100%;
+      max-width: 600px;
+    }
+
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      text-align: left;
+    }
+
+    .feature-card .icon {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .feature-card h3 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.25rem;
+    }
+
+    .feature-card p {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .btn-strava {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: var(--orange);
+      color: white;
+      text-decoration: none;
+      padding: 0.9rem 2rem;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 1rem;
+      transition: all 0.2s;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-strava:hover {
+      background: var(--orange-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(252, 76, 2, 0.35);
+    }
+
+    .strava-logo {
+      width: 22px;
+      height: 22px;
+    }
+
+    /* Dashboard */
+    .dashboard { display: none; }
+
+    .section-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 640px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .card-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    /* Stats grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+
+    .stat-item {
+      background: var(--card2);
+      border-radius: 8px;
+      padding: 0.75rem;
+    }
+
+    .stat-label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 0.2rem;
+    }
+
+    .stat-value {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .stat-unit {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    /* Zone badges */
+    .zone-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .zone-1 { background: #1e3a5f; color: #60a5fa; }
+    .zone-2 { background: #14532d; color: #86efac; }
+    .zone-3 { background: #1a2e05; color: #a3e635; }
+    .zone-4 { background: #422006; color: #fdba74; }
+    .zone-5 { background: #450a0a; color: #fca5a5; }
+    .zone-6 { background: #3b0764; color: #d8b4fe; }
+    .zone-7 { background: #4a0519; color: #fda4af; }
+
+    /* Activities table */
+    .activities-section { margin-bottom: 2rem; }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    th {
+      background: var(--card2);
+      padding: 0.75rem 1rem;
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 0.8rem 1rem;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .activity-name {
+      font-weight: 600;
+      color: var(--text);
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .text-muted { color: var(--muted); }
+    .text-orange { color: var(--orange); }
+
+    /* Analyse section */
+    .analyse-section { margin-bottom: 2rem; }
+
+    .btn-analyse {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: linear-gradient(135deg, var(--orange), #ff8c42);
+      color: white;
+      border: none;
+      padding: 0.85rem 1.75rem;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-analyse:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(252, 76, 2, 0.35);
+    }
+
+    .btn-analyse:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .advice-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.75rem;
+      margin-top: 1.25rem;
+    }
+
+    .advice-card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+      color: var(--orange);
+    }
+
+    .advice-timestamp {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 1.25rem;
+    }
+
+    .advice-content {
+      line-height: 1.75;
+      color: var(--text);
+      font-size: 0.92rem;
+    }
+
+    .advice-content h1,
+    .advice-content h2,
+    .advice-content h3 {
+      color: var(--text);
+      margin: 1.25rem 0 0.5rem;
+      font-size: 1rem;
+    }
+
+    .advice-content h1 { font-size: 1.15rem; color: var(--orange); }
+    .advice-content h2 { font-size: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; }
+
+    .advice-content ul,
+    .advice-content ol {
+      padding-left: 1.25rem;
+      margin: 0.5rem 0;
+    }
+
+    .advice-content li { margin-bottom: 0.3rem; }
+
+    .advice-content strong {
+      color: var(--orange);
+      font-weight: 700;
+    }
+
+    .advice-content em { color: var(--muted); }
+
+    .advice-content p { margin-bottom: 0.75rem; }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Profile section */
+    .profile-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.6rem;
+    }
+
+    .profile-item {
+      background: var(--card2);
+      border-radius: 8px;
+      padding: 0.65rem 0.85rem;
+    }
+
+    .profile-item .label {
+      font-size: 0.68rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.2rem;
+    }
+
+    .profile-item .value {
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    /* Alert */
+    .alert {
+      background: rgba(252,76,2,0.1);
+      border: 1px solid rgba(252,76,2,0.3);
+      color: var(--orange);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+    }
+
+    .loading-overlay {
+      text-align: center;
+      padding: 3rem;
+      color: var(--muted);
+    }
+
+    .loading-overlay .big-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--orange);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 1rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="/" class="logo">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+      <path d="M2 17l10 5 10-5"/>
+      <path d="M2 12l10 5 10-5"/>
+    </svg>
+    Strava Coach
+  </a>
+  <div id="headerRight"></div>
+</header>
+
+<main>
+  <!-- Login screen -->
+  <div class="login-screen" id="loginScreen">
+    <div class="login-hero">
+      <h1>Strava Coach</h1>
+      <p>Persoonlijk trainingsadvies op basis van je Strava-data en jouw fysiologisch profiel, aangedreven door Claude AI.</p>
+    </div>
+    <div class="features">
+      <div class="feature-card">
+        <div class="icon">🚴</div>
+        <h3>Strava Data</h3>
+        <p>Analyseert je laatste 10 activiteiten inclusief HR en vermogen</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🧬</div>
+        <h3>Jouw Profiel</h3>
+        <p>Gepersonaliseerd op basis van je fysiologische testresultaten</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🤖</div>
+        <h3>AI Coach</h3>
+        <p>Claude AI genereert specifiek trainingsadvies voor jou</p>
+      </div>
+    </div>
+    <a href="/auth/strava" class="btn-strava">
+      <svg class="strava-logo" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+      </svg>
+      Inloggen met Strava
+    </a>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="dashboard" id="dashboard">
+    <div id="errorMsg"></div>
+
+    <!-- Activities + Profile side by side -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Atleet Profiel</span>
+        </div>
+        <div class="profile-grid">
+          <div class="profile-item">
+            <div class="label">VO2max</div>
+            <div class="value text-orange">51.8 <span style="font-size:0.7rem;color:var(--muted)">ml/min/kg</span></div>
+          </div>
+          <div class="profile-item">
+            <div class="label">Max Vermogen</div>
+            <div class="value">300W <span style="font-size:0.7rem;color:var(--muted)">4.1 W/kg</span></div>
+          </div>
+          <div class="profile-item">
+            <div class="label">Max HR</div>
+            <div class="value">179 <span style="font-size:0.7rem;color:var(--muted)">bpm</span></div>
+          </div>
+          <div class="profile-item">
+            <div class="label">Aeroob drempel</div>
+            <div class="value">177W / 130bpm</div>
+          </div>
+          <div class="profile-item">
+            <div class="label">Anaeroob drempel</div>
+            <div class="value">240W / 159bpm</div>
+          </div>
+          <div class="profile-item">
+            <div class="label">Stressscore</div>
+            <div class="value" style="color:var(--red)">9/10 ⚠️</div>
+          </div>
+        </div>
+        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+          <div class="section-title">Trainingszones</div>
+          <div style="display:flex;flex-wrap:wrap;gap:0.4rem;">
+            <span class="zone-badge zone-1">Z1 REC &lt;140W / &lt;115bpm</span>
+            <span class="zone-badge zone-2">Z2 EDT1 140-165W / 115-125bpm</span>
+            <span class="zone-badge zone-3">Z3 EDT2 165-185W / 125-135bpm</span>
+            <span class="zone-badge zone-4">Z4 IDT 185-230W / 135-155bpm</span>
+            <span class="zone-badge zone-5">Z5 EIT1 230-250W / 155-163bpm</span>
+            <span class="zone-badge zone-6">Z6 EIT2 250-280W / 163-173bpm</span>
+            <span class="zone-badge zone-7">Z7 IIT &gt;280W / &gt;173bpm</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Recente Activiteiten — Samenvatting</span>
+        </div>
+        <div id="activityStats">
+          <div class="loading-overlay">
+            <div class="big-spinner"></div>
+            <p>Activiteiten laden...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activities table -->
+    <div class="activities-section">
+      <div class="section-title">Laatste 10 activiteiten</div>
+      <div class="table-wrap">
+        <table id="activitiesTable">
+          <thead>
+            <tr>
+              <th>Datum</th>
+              <th>Naam</th>
+              <th>Type</th>
+              <th>Duur</th>
+              <th>Afstand</th>
+              <th>Gem HR</th>
+              <th>Gem Watt</th>
+              <th>TSS</th>
+              <th>Zone</th>
+            </tr>
+          </thead>
+          <tbody id="activitiesTbody">
+            <tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--muted)">
+              <div class="loading-overlay">
+                <div class="big-spinner"></div>
+                <p>Laden...</p>
+              </div>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Analyse section -->
+    <div class="analyse-section">
+      <div class="section-title">AI Trainingsanalyse</div>
+      <button class="btn-analyse" id="analyseBtn" onclick="runAnalysis()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+        </svg>
+        Analyseer mijn training
+      </button>
+      <div id="adviceContainer"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+const loginScreen = document.getElementById('loginScreen');
+const dashboard = document.getElementById('dashboard');
+const headerRight = document.getElementById('headerRight');
+
+function formatDuration(seconds) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return h > 0 ? `${h}u${String(m).padStart(2,'0')}` : `${m}min`;
+}
+
+function formatDistance(meters) {
+  return (meters / 1000).toFixed(1) + ' km';
+}
+
+function formatDate(dateStr) {
+  return new Date(dateStr).toLocaleDateString('nl-BE', {
+    weekday: 'short', day: 'numeric', month: 'short'
+  });
+}
+
+function zoneBadge(zone) {
+  if (!zone) return '<span class="text-muted">—</span>';
+  return `<span class="zone-badge zone-${zone.id}">Z${zone.id} ${zone.name}</span>`;
+}
+
+function markdownToHtml(text) {
+  return text
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
+    .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/^(?!<[hul])/gm, '')
+    .replace(/(.+)(?!<\/[hul]>)/g, (m) => m.startsWith('<') ? m : `<p>${m}</p>`);
+}
+
+async function init() {
+  try {
+    const res = await fetch('/api/status');
+    const data = await res.json();
+
+    if (data.authenticated) {
+      showDashboard(data.athlete);
+      loadActivities();
+    } else {
+      loginScreen.style.display = 'flex';
+    }
+  } catch (e) {
+    loginScreen.style.display = 'flex';
+  }
+}
+
+function showDashboard(athlete) {
+  loginScreen.style.display = 'none';
+  dashboard.style.display = 'block';
+
+  const img = athlete.profile_medium
+    ? `<img src="${athlete.profile_medium}" alt="${athlete.firstname}">`
+    : '';
+  headerRight.innerHTML = `
+    <div class="athlete-badge">
+      ${img}
+      <span class="athlete-name">${athlete.firstname} ${athlete.lastname}</span>
+      <a href="/auth/logout" class="btn-logout">Uitloggen</a>
+    </div>
+  `;
+}
+
+async function loadActivities() {
+  try {
+    const res = await fetch('/api/activities');
+    const data = await res.json();
+
+    if (data.error) throw new Error(data.error);
+
+    renderActivitiesTable(data.activities);
+    renderActivityStats(data.activities);
+  } catch (e) {
+    document.getElementById('activitiesTbody').innerHTML =
+      `<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--red)">
+        Fout bij laden: ${e.message}
+      </td></tr>`;
+  }
+}
+
+function renderActivitiesTable(activities) {
+  const tbody = document.getElementById('activitiesTbody');
+  if (!activities || activities.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--muted)">Geen activiteiten gevonden</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = activities.map(a => `
+    <tr>
+      <td class="text-muted">${formatDate(a.start_date_local)}</td>
+      <td><div class="activity-name">${a.name}</div></td>
+      <td class="text-muted">${a.type}</td>
+      <td>${formatDuration(a.moving_time)}</td>
+      <td>${a.distance > 0 ? formatDistance(a.distance) : '—'}</td>
+      <td>${a.average_heartrate ? Math.round(a.average_heartrate) + ' bpm' : '<span class="text-muted">—</span>'}</td>
+      <td>${a.average_watts ? Math.round(a.average_watts) + 'W' : '<span class="text-muted">—</span>'}</td>
+      <td class="text-orange"><strong>${a.tss}</strong></td>
+      <td>${zoneBadge(a.zone)}</td>
+    </tr>
+  `).join('');
+}
+
+function renderActivityStats(activities) {
+  const statsEl = document.getElementById('activityStats');
+  if (!activities || activities.length === 0) {
+    statsEl.innerHTML = '<p class="text-muted">Geen data</p>';
+    return;
+  }
+
+  const totalTSS = activities.reduce((s, a) => s + (a.tss || 0), 0);
+  const totalDuration = activities.reduce((s, a) => s + a.moving_time, 0);
+  const totalDistance = activities.reduce((s, a) => s + a.distance, 0);
+  const avgHR = activities.filter(a => a.average_heartrate).reduce((s, a, _, arr) =>
+    s + a.average_heartrate / arr.length, 0);
+  const avgPower = activities.filter(a => a.average_watts).reduce((s, a, _, arr) =>
+    s + a.average_watts / arr.length, 0);
+
+  // Zone distribution
+  const zoneCounts = {};
+  activities.forEach(a => {
+    if (a.zone) {
+      const key = `Z${a.zone.id}`;
+      zoneCounts[key] = (zoneCounts[key] || 0) + 1;
+    }
+  });
+
+  const zoneHtml = Object.entries(zoneCounts)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([z, count]) => {
+      const id = parseInt(z[1]);
+      const pct = Math.round((count / activities.length) * 100);
+      return `<div style="margin-bottom:0.4rem;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:0.2rem;">
+          <span class="zone-badge zone-${id}" style="font-size:0.68rem;">${z}</span>
+          <span style="font-size:0.75rem;color:var(--muted)">${count} activiteiten (${pct}%)</span>
+        </div>
+        <div style="background:var(--border);border-radius:4px;height:5px;">
+          <div style="background:var(--orange);width:${pct}%;height:100%;border-radius:4px;transition:width 0.5s;"></div>
+        </div>
+      </div>`;
+    }).join('');
+
+  statsEl.innerHTML = `
+    <div class="stats-grid" style="margin-bottom:1rem;">
+      <div class="stat-item">
+        <div class="stat-label">Totaal TSS</div>
+        <div class="stat-value text-orange">${totalTSS}</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Totale duur</div>
+        <div class="stat-value">${formatDuration(totalDuration)}</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Totale afstand</div>
+        <div class="stat-value">${formatDistance(totalDistance)}</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Gem HR / Vermogen</div>
+        <div class="stat-value" style="font-size:0.9rem;">
+          ${avgHR > 0 ? Math.round(avgHR) + ' bpm' : '—'}
+          ${avgPower > 0 ? ' / ' + Math.round(avgPower) + 'W' : ''}
+        </div>
+      </div>
+    </div>
+    <div class="section-title">Zonedistributie</div>
+    ${zoneHtml || '<p class="text-muted" style="font-size:0.82rem;">Geen zonedata</p>'}
+  `;
+}
+
+async function runAnalysis() {
+  const btn = document.getElementById('analyseBtn');
+  const container = document.getElementById('adviceContainer');
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Claude analyseert...';
+
+  container.innerHTML = `
+    <div class="advice-card">
+      <div class="loading-overlay">
+        <div class="big-spinner"></div>
+        <p>Claude analyseert je training en stelt een plan op...</p>
+        <p style="font-size:0.75rem;margin-top:0.5rem;">Dit duurt enkele seconden</p>
+      </div>
+    </div>`;
+
+  try {
+    const res = await fetch('/api/analyse', { method: 'POST' });
+    const data = await res.json();
+
+    if (data.error) throw new Error(data.error);
+
+    const now = new Date().toLocaleString('nl-BE');
+    container.innerHTML = `
+      <div class="advice-card">
+        <h3>🤖 Trainingsadvies van je AI Coach</h3>
+        <div class="advice-timestamp">Gegenereerd op ${now} • Claude Sonnet</div>
+        <div class="advice-content">${formatAdvice(data.advice)}</div>
+      </div>`;
+  } catch (e) {
+    container.innerHTML = `
+      <div class="advice-card">
+        <div class="alert">Fout bij analyse: ${e.message}</div>
+      </div>`;
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+    </svg>
+    Nieuwe analyse`;
+}
+
+function formatAdvice(text) {
+  // Convert markdown to HTML
+  let html = text
+    // Headers
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    // Bold
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // Italic
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    // Unordered lists
+    .replace(/^[-•] (.+)$/gm, '<li>$1</li>')
+    // Ordered lists
+    .replace(/^\d+\. (.+)$/gm, '<oli>$1</oli>')
+    // Wrap consecutive li items
+    .replace(/(<li>.*?<\/li>\n?)+/gs, m => `<ul>${m}</ul>`)
+    .replace(/(<oli>.*?<\/oli>\n?)+/gs, m => `<ol>${m.replace(/<\/?oli>/g, m2 => m2.replace('oli','li'))}</ol>`)
+    // Paragraphs (double newlines)
+    .replace(/\n\n/g, '\n')
+    .split('\n')
+    .map(line => {
+      if (line.match(/^<[h1-6ul]/) || line.match(/<\/[h1-6ul]/)) return line;
+      if (line.trim() === '') return '';
+      return `<p>${line}</p>`;
+    })
+    .join('\n');
+
+  return html;
+}
+
+// Check for error in URL
+const params = new URLSearchParams(window.location.search);
+if (params.get('error')) {
+  const errMsg = document.getElementById('errorMsg');
+  if (errMsg) {
+    const msgs = {
+      'access_denied': 'Toegang geweigerd. Probeer opnieuw in te loggen.',
+      'auth_failed': 'Inloggen mislukt. Controleer de app-instellingen.'
+    };
+    errMsg.innerHTML = `<div class="alert">${msgs[params.get('error')] || 'Er ging iets mis.'}</div>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
